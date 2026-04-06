@@ -1,0 +1,48 @@
+version: "3.9"
+
+services:
+
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  features:
+    build: ./features
+    container_name: features
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: on-failure
+
+  model:
+    build: ./model
+    container_name: model
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: on-failure
+
+  metric:
+    build: ./metric
+    container_name: metric
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./logs:/logs
+    restart: on-failure
+
+  plot:
+    build: ./plot
+    container_name: plot
+    volumes:
+      - ./logs:/logs
+    restart: on-failure
